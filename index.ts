@@ -16,7 +16,10 @@ const io = new Server(server, {
     },
 })
 
-const rooms: Record<string, string[]> = {}
+/**
+ * @type {Record<string, string[]>}
+ */
+const rooms = {};
 
 io.on("connection", (socket) => {
     socket.on("roomID", (data) => {
