@@ -59,8 +59,8 @@ io.on("connection", (socket) => {
         io.to(roomID).emit("likeCountUpdated", { commentID, column, userID })
     })
 
-    socket.on("updateCommentContent", ({ roomID, column, updatedComments }) => {
-        io.to(roomID).emit("commentListUpdated", { column, updatedComments })
+    socket.on("updateCommentContent", ({ roomID, column, updatedComments: updatedCommentList }) => {
+        io.to(roomID).emit("commentListUpdated", { column, updatedComments: updatedCommentList })
     })
 
     socket.on("disconnecting", () => {
