@@ -1,8 +1,8 @@
 
-const express = require('express');
-const cors = require('cors');
-const http = require('http');
-const { Server } = require("socket.io");
+import express from 'express';
+import cors from 'cors';
+import http from 'http';
+import { Server } from "socket.io";
 
 const app = express()
 app.use(cors())
@@ -12,7 +12,7 @@ const server = http.createServer(app)
 const io = new Server(server, {
     cors: {
         origin: [
-            "https://retro-tool4.vercel.app","http://localhost:3000"],
+            "https://retro-tool4notcurrent.vercel.app/","http://localhost:3000"],
         methods: ["GET", "POST"],
     },
 })
@@ -23,8 +23,7 @@ const io = new Server(server, {
 const rooms = {};
 
 io.on("connection", (socket) => {
-    socket.on("roomID", (data) => {
-        const { roomID } = data
+    const roomID = socket.handshake.query.roomID as string;
 
         socket.join(roomID)
 
@@ -41,7 +40,7 @@ io.on("connection", (socket) => {
         } else {
             io.to(socket.id).emit("adminAssigned", false);
         }
-    })
+
 
     socket.on("commentContent", (data) => {
         socket.to(data.roomID).emit("commentReturn", data)
@@ -68,13 +67,24 @@ io.on("connection", (socket) => {
             const index = rooms[roomID]?.indexOf(socket.id)
             if (index !== -1 && rooms[roomID]) {
                 rooms[roomID].splice(index, 1)
-
+    
                 if (index === 0 && rooms[roomID].length > 0) {
                     const newAdminID = rooms[roomID][0];
                     io.to(newAdminID).emit("adminAssigned", { isAdmin: true })
                 }
             }
         }
+        // for (const roomID of socket.rooms) {
+        //     const index = rooms[roomID]?.indexOf(socket.id)
+        //     if (index !== -1 && rooms[roomID]) {
+        //         rooms[roomID].splice(index, 1)
+
+        //         if (index === 0 && rooms[roomID].length > 0) {
+        //             const newAdminID = rooms[roomID][0];
+        //             io.to(newAdminID).emit("adminAssigned", { isAdmin: true })
+        //         }
+        //     }
+        // }
     })
 })
 
