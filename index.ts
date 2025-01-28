@@ -12,7 +12,7 @@ const server = http.createServer(app)
 const io = new Server(server, {
     cors: {
         origin: [
-            //"https://retro-tool4.vercel.app", 
+            "https://retro-tool4.vercel.app", 
             "http://localhost:3000"],
         methods: ["GET", "POST"],
     },
