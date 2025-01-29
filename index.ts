@@ -65,6 +65,7 @@ io.on('connection', (socket: Socket) => {
       io.to(socket.id).emit("adminAssigned", isAdmin);
       io.to(roomID).emit("userCount", room.users.length);
       io.to(roomID).emit("userList", rooms[roomID].users);
+      console.log("odaya katılan olduğunda", rooms[roomID].users)
     });
 
     socket.on("commentContent", (data) => {
@@ -88,29 +89,32 @@ io.on('connection', (socket: Socket) => {
     })
 
     socket.on("disconnect", () => {
-        for (const roomID of socket.rooms) {
-          if (!rooms[roomID]) continue;
+        console.log(`User disconnected: ${socket.id}`);
     
-          const room = rooms[roomID];
-          const userIndex = room.users.findIndex(u => u.socketID === socket.id);
+            for (const [roomID, room] of Object.entries(rooms)) {
+                const userIndex = room.users.findIndex(u => u.socketID === socket.id);
+        
+            if (userIndex !== -1) {
+                const leavingUser = room.users[userIndex];
     
-          if (userIndex !== -1) {
-            const leavingUser = room.users[userIndex];
-            room.users.splice(userIndex, 1);
-    
-            if (leavingUser.userID === room.adminUserID) {
-              if (room.users.length > 0) {
-                const newAdmin = room.users[0];
-                room.adminUserID = newAdmin.userID;
-                io.to(newAdmin.socketID).emit("adminAssigned", true);
-              } else {
-                room.adminUserID = null;
-              }
+                room.users.splice(userIndex, 1);
+                
+                if (leavingUser.userID === room.adminUserID) {
+                    if (room.users.length > 0) {
+                        const newAdmin = room.users[0];
+                        room.adminUserID = newAdmin.userID;
+                        io.to(newAdmin.socketID).emit("adminAssigned", true);
+                        console.log(`New admin assigned: ${newAdmin.userID}`);
+                    } else {
+                        room.adminUserID = null;
+                        console.log("No users left, admin set to null.");
+                    }
+                }
+                io.to(roomID).emit("userCount", room.users.length);
+                io.to(roomID).emit("userList", rooms[roomID].users);
             }
-          }
-          io.to(roomID).emit("userCount", room.users.length);
         }
-    })
+    });
 })
 
 const port = 8000
