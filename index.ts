@@ -67,11 +67,15 @@ io.on('connection', (socket: Socket) => {
       io.to(roomID).emit("userList", rooms[roomID].users);
       console.log("odaya katılan olduğunda", rooms[roomID].users)
     });
-
+    socket.on("groupComments", (payload) => {
+      io.to(payload.roomID).emit("groupComments", payload);
+    });
     socket.on("commentContent", (data) => {
         socket.to(data.roomID).emit("commentReturn", data)
     })
-
+    socket.on("ungroupComment", (payload) => {
+      io.to(payload.roomID).emit("ungroupComment", payload);
+    });
     socket.on('deleteComment', ({ commentID, roomID }) => {
         io.to(roomID).emit('commentDeleted', {commentID, roomID})
     })
