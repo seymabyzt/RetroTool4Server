@@ -12,11 +12,18 @@ const server = http.createServer(app)
 const io = new Server(server, {
     cors: {
         origin: [
-            "https://retro-tool4.vercel.app"
+            "https://retro-tool4.vercel.app",
+            // "http://localhost:3000",
         ],
         methods: ["GET", "POST", "OPTIONS"],
         credentials: true,
     },
+    connectionStateRecovery: {
+      maxDisconnectionDuration: 2 * 60 * 1000,
+      skipMiddlewares: true,
+    },
+    pingInterval: 20000,
+    pingTimeout: 20000  
 });
 
 type UserInfo = {
@@ -33,7 +40,7 @@ type UserInfo = {
 
 io.on('connection', (socket: Socket) => {
     socket.on('joinRoom', ({ roomID, userID }) => {
-  
+
       socket.join(roomID);
   
       if (!rooms[roomID]) {
@@ -64,7 +71,8 @@ io.on('connection', (socket: Socket) => {
       io.to(socket.id).emit("adminAssigned", isAdmin);
       io.to(roomID).emit("userCount", room.users.length);
       io.to(roomID).emit("userList", rooms[roomID].users);
-      console.log("odaya katılan olduğunda", rooms[roomID].users)
+      io.to(roomID).emit("adminUser", rooms[roomID].adminUserID)
+
     });
     socket.on("groupComments", (payload) => {
       io.to(payload.roomID).emit("groupComments", payload);
@@ -90,9 +98,10 @@ io.on('connection', (socket: Socket) => {
     socket.on("updateCommentContent", ({ roomID, column, updatedComments }) => {
         io.to(roomID).emit("commentListUpdated", { column, updatedComments })
     })
-
+    socket.on("pingServer", () => {
+      socket.emit("pongClient");
+    });
     socket.on("disconnect", () => {
-        console.log(`User disconnected: ${socket.id}`);
     
             for (const [roomID, room] of Object.entries(rooms)) {
                 const userIndex = room.users.findIndex(u => u.socketID === socket.id);
@@ -107,15 +116,13 @@ io.on('connection', (socket: Socket) => {
                         const newAdmin = room.users[0];
                         room.adminUserID = newAdmin.userID;
                         io.to(newAdmin.socketID).emit("adminAssigned", true);
-                        console.log(`New admin assigned: ${newAdmin.userID}`);
                     } else {
                         room.adminUserID = null;
-                        console.log("No users left, admin set to null.");
                     }
                 }
                 io.to(roomID).emit("userCount", room.users.length);
                 io.to(roomID).emit("userList", rooms[roomID].users);
-            }
+            } 
         }
     });
 })
